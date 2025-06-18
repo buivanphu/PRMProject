@@ -3,6 +3,7 @@ package com.example.productsaleapp.activities;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -10,83 +11,105 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.productsaleapp.R;
 
+import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class PaymentMethodActivity extends AppCompatActivity {
 
-    Button btnCash, btnBanking;
-    String name, phone, address, city;
-    int totalAmount = 0; // tổng tiền của đơn hàng
+    private String fullName, phone, address, city;
+    private int userId;
+    private double totalAmount;
+
+    private Button btnBanking, btnCash;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_payment_method);
 
-        btnCash = findViewById(R.id.btnCash);
+        // ✅ Lấy dữ liệu từ Intent (KHÔNG khai báo lại biến)
+        Intent intent = getIntent();
+        fullName = intent.getStringExtra("fullName");
+        phone = intent.getStringExtra("phone");
+        address = intent.getStringExtra("address");
+        city = intent.getStringExtra("city");
+        userId = intent.getIntExtra("userId", -1);
+        totalAmount = intent.getDoubleExtra("totalAmount", 0);
+
+        // ✅ Kiểm tra dữ liệu
+        if (userId == -1 || totalAmount <= 0) {
+            Toast.makeText(this, "Thiếu thông tin thanh toán", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // ✅ Ánh xạ nút
         btnBanking = findViewById(R.id.btnBanking);
+        btnCash = findViewById(R.id.btnCash);
 
-        // Nhận dữ liệu từ ConfirmShippingInfoActivity
-        Intent i = getIntent();
-        name = i.getStringExtra("name");
-        phone = i.getStringExtra("phone");
-        address = i.getStringExtra("address");
-        city = i.getStringExtra("city");
-        totalAmount = i.getIntExtra("totalAmount", 0);
+        // ✅ Sự kiện nút thanh toán qua PayOS
+        btnBanking.setOnClickListener(v -> createOrderWithPayOS());
 
-        // ⚙️ 1. Thanh toán khi nhận hàng
+        // ✅ Sự kiện nút thanh toán khi nhận hàng (COD)
         btnCash.setOnClickListener(v -> {
-            Intent intent = new Intent(this, BillingActivity.class);
-            intent.putExtra("name", name);
-            intent.putExtra("phone", phone);
-            intent.putExtra("address", address);
-            intent.putExtra("city", city);
-            intent.putExtra("paymentMethod", "cash");
-            intent.putExtra("totalAmount", totalAmount);
-            startActivity(intent);
+            Toast.makeText(this, "Đặt hàng thành công (Thanh toán khi nhận hàng)", Toast.LENGTH_SHORT).show();
+            // Bạn có thể chuyển sang trang xác nhận đơn hàng nếu muốn
         });
+    }
 
-        // ⚙️ 2. Thanh toán qua PayOS
-        btnBanking.setOnClickListener(v -> {
-            String url = "http://10.0.2.2:8080/ProductAPI/payos".trim();
-            // Thay bằng đúng IP và tên bạn
+    private void createOrderWithPayOS() {
+        String url = "https://webhook.productfpt.id.vn/ProductAPI/payos";
 
-            RequestQueue queue = Volley.newRequestQueue(this);
-            StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-                    response -> {
-                        try {
-                            JSONObject jsonObject = new JSONObject(response);
-                            String checkoutUrl = jsonObject.getString("checkoutUrl");
+        // ✅ Tạo JSON gửi đi
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("fullName", fullName);
+            jsonBody.put("phone", phone);
+            jsonBody.put("address", address);
+            jsonBody.put("city", city);
+            jsonBody.put("userId", userId);
+            jsonBody.put("totalAmount", totalAmount);
+            jsonBody.put("description", "Thanh toán đơn hàng của " + fullName);
+            jsonBody.put("returnUrl", "productsaleapp://return"); // ✅ deep link để quay lại app
 
-                            // Mở trình duyệt đến PayOS
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Lỗi tạo dữ liệu đơn hàng", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // ✅ Gửi yêu cầu POST bằng Volley
+        JsonObjectRequest request = new JsonObjectRequest(
+                Request.Method.POST,
+                url,
+                jsonBody,
+                response -> {
+                    try {
+                        boolean success = response.getBoolean("success");
+                        if (success) {
+                            String checkoutUrl = response.getString("checkoutUrl");
                             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(checkoutUrl));
                             startActivity(browserIntent);
-                        } catch (Exception e) {
-                            Toast.makeText(this, "Lỗi phản hồi từ PayOS", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(this, "Tạo đơn hàng thất bại", Toast.LENGTH_SHORT).show();
                         }
-                    },
-                    error -> Toast.makeText(this, "Lỗi kết nối tới server", Toast.LENGTH_SHORT).show()
-            ) {
-                @Override
-                protected Map<String, String> getParams() {
-                    Map<String, String> params = new HashMap<>();
-                    params.put("name", name);
-                    params.put("phone", phone);
-                    params.put("address", address);
-                    params.put("city", city);
-                    params.put("totalAmount", String.valueOf(totalAmount));
-                    return params;
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                        Toast.makeText(this, "Phản hồi không hợp lệ từ máy chủ", Toast.LENGTH_SHORT).show();
+                    }
+                },
+                error -> {
+                    error.printStackTrace();
+                    Toast.makeText(this, "Lỗi kết nối API: " + error.toString(), Toast.LENGTH_LONG).show();
                 }
-            };
+        );
 
-            queue.add(stringRequest);
-        });
+        // ✅ Gửi request
+        RequestQueue queue = Volley.newRequestQueue(this);
+        queue.add(request);
     }
 }

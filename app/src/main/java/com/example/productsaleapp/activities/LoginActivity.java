@@ -76,13 +76,27 @@ public class LoginActivity extends AppCompatActivity {
 
                 runOnUiThread(() -> {
                     if (success) {
-                        Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(this, ProductListActivity.class));
-                        finish();
+                        try {
+                            int userId = json.getInt("userId"); // lấy userId từ response
+
+                            // Lưu userId vào SharedPreferences
+                            getSharedPreferences("MyAppPrefs", MODE_PRIVATE)
+                                    .edit()
+                                    .putInt("userId", userId)
+                                    .apply();
+
+                            Toast.makeText(this, "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(this, ProductListActivity.class));
+                            finish();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            Toast.makeText(this, "Lỗi khi lưu userId", Toast.LENGTH_SHORT).show();
+                        }
                     } else {
                         Toast.makeText(this, "Sai tài khoản hoặc mật khẩu", Toast.LENGTH_SHORT).show();
                     }
                 });
+
 
             } catch (Exception e) {
                 e.printStackTrace();

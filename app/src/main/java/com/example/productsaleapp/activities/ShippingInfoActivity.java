@@ -23,6 +23,9 @@ public class ShippingInfoActivity extends AppCompatActivity {
             "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
     };
 
+    private int userId = -1;
+    private double totalAmount = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,6 +36,11 @@ public class ShippingInfoActivity extends AppCompatActivity {
         edtAddress = findViewById(R.id.edtAddress);
         spinnerCity = findViewById(R.id.spinnerCity);
         btnContinue = findViewById(R.id.btnContinue);
+
+        // ✅ Lấy userId và totalAmount từ Intent gửi qua
+        Intent intent = getIntent();
+        userId = intent.getIntExtra("userId", -1);
+        totalAmount = intent.getDoubleExtra("totalAmount", 0);
 
         // Gán danh sách tỉnh vào Spinner
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, cities);
@@ -49,13 +57,15 @@ public class ShippingInfoActivity extends AppCompatActivity {
                 return;
             }
 
-            // Chuyển sang màn hình xác nhận
-            Intent intent = new Intent(this, ConfirmShippingInfoActivity.class);
-            intent.putExtra("fullName", name);
-            intent.putExtra("phone", phone);
-            intent.putExtra("address", address);
-            intent.putExtra("city", city);
-            startActivity(intent);
+            // ✅ Truyền tất cả thông tin sang màn hình xác nhận
+            Intent i = new Intent(this, ConfirmShippingInfoActivity.class);
+            i.putExtra("userId", userId);
+            i.putExtra("totalAmount", totalAmount);
+            i.putExtra("fullName", name);
+            i.putExtra("phone", phone);
+            i.putExtra("address", address);
+            i.putExtra("city", city);
+            startActivity(i);
         });
     }
 }
