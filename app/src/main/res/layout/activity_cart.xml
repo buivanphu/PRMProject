@@ -1,0 +1,31 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:padding="16dp">
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCart"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/tvTotalCart"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="end"
+        android:text="Tổng: 0 VND"
+        android:layout_marginTop="8dp"/>
+    <Button
+        android:id="@+id/btnCheckout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Thanh toán"
+        android:layout_margin="16dp"
+        android:backgroundTint="@color/purple_500"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"/>
+
+</LinearLayout>
+

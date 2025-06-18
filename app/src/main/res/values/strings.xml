@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Product Sale App</string>
+    <string name="your_name">Họ và tên</string>
+    <string name="phone">Số điện thoại</string>
+    <string name="address">Địa chỉ chi tiết</string>
+    <string name="btn_continue">Tiếp tục</string>
+</resources>
